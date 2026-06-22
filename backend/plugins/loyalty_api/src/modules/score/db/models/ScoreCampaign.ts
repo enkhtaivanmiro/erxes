@@ -146,7 +146,8 @@ export const loadScoreCampaignClass = (models: IModels, subdomain: string) => {
         );
       }
 
-      let { placeholder, currencyRatio = 0 } = campaign?.subtract || {};
+      let { placeholder } = campaign?.subtract || {};
+      const { currencyRatio = 0 } = campaign?.subtract || {};
 
       const matches = (placeholder || '').match(/\{\{\s*([^}]+)\s*\}\}/g);
       const attributes = (matches || []).map((match) =>
@@ -157,7 +158,11 @@ export const loadScoreCampaignClass = (models: IModels, subdomain: string) => {
         placeholder = resolvePlaceholderValue(target, attribute);
       }
 
-      let changeScore = (eval(placeholder) || 0) * Number(currencyRatio) || 0;
+      if (placeholder && /[^0-9+\-*/().\s]/.test(placeholder)) {
+        throw new Error("Invalid characters in placeholder formula");
+      }
+
+      let changeScore = (new Function(`return ${placeholder || 0}`)() || 0) * Number(currencyRatio) || 0;
 
       const { score = 0, customFieldsData = [] } = owner || {};
 
@@ -245,7 +250,8 @@ export const loadScoreCampaignClass = (models: IModels, subdomain: string) => {
         }
       }
 
-      let { placeholder = '', currencyRatio = 0 } = campaign[actionMethod];
+      let { placeholder = '' } = campaign[actionMethod];
+      const { currencyRatio = 0 } = campaign[actionMethod];
 
       const matches = (placeholder || '').match(/\{\{\s*([^}]+)\s*\}\}/g);
       const attributes = [
@@ -263,7 +269,11 @@ export const loadScoreCampaignClass = (models: IModels, subdomain: string) => {
         );
       }
 
-      const changeScore = (eval(placeholder) || 0) * Number(currencyRatio) || 0;
+      if (placeholder && /[^0-9+\-*/().\s]/.test(placeholder)) {
+        throw new Error("Invalid characters in placeholder formula");
+      }
+
+      const changeScore = (new Function(`return ${placeholder || 0}`)() || 0) * Number(currencyRatio) || 0;
       if (!changeScore) {
         return;
       }
@@ -426,7 +436,7 @@ export const loadScoreCampaignClass = (models: IModels, subdomain: string) => {
         );
       }
 
-      let { changeScore, campaignId, action } = scoreLog;
+      const { changeScore, campaignId, action } = scoreLog;
 
       const campaign = await models.ScoreCampaigns.findOne({ _id: campaignId });
       if (!campaign) {
